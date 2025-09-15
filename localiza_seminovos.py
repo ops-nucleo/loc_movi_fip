@@ -121,135 +121,138 @@ class dashboard_localiza_movida:
                         .replace(",", "X").replace(".", ",").replace("X", ".") if pd.notnull(x) else "-"
             )
 
-    def calcular_variacao_semanal(self, filtro=None, site=None, tipo_analise=None, variavel=None, data_corte=None):
+    def calcular_variacao_semanal(self, filtro=None, tipo_analise=None, variavel=None, data_corte=None):
         self.df["Data"] = pd.to_datetime(self.df["Data"]).dt.normalize()
-
-        if site:
-            df = self.df[self.df["Site"].str.lower() == site.lower()].copy()
-        else:
-            df = self.df.copy()
-
-        modelos = self.modelos_escolhidos_localiza if site == "localiza" else self.modelos_escolhidos_movida
-        df = df[df["Model"].isin(modelos)]
-
+        df = self.df.copy()
+    
         if filtro in ['vendidos', 'novos']:
             df = df.dropna(subset=['ID'])
-
+    
         if data_corte is not None:
             data_corte = pd.to_datetime(data_corte).normalize()
             df = df[df["Data"] >= data_corte]
-        with st.expander(f"🧪 DEBUG: DF após filtros - Site: {site} | Filtro: {filtro} | Corte: {data_corte}"):
-            st.write(f"Registros após filtros: {len(df)}")
-            st.dataframe(df)
-        df["Data"] = pd.to_datetime(df["Data"]).dt.normalize()
-        df_ids = df.groupby('Data')['ID'].apply(set).to_dict()
-        all_dates = df["Data"].sort_values().unique()
-
-        meses = defaultdict(list)
-        for dt in all_dates:
-            chave_mes = dt.strftime('%Y-%m')
-            meses[chave_mes].append(dt)
-
-        meses_ordenados = sorted(meses.keys())
-        intervalos = defaultdict(list)
-
-        for i, chave_mes in enumerate(meses_ordenados):
-            datas_mes = sorted(meses[chave_mes])
-            if len(datas_mes) < 2:
-                continue
-            start = datas_mes[0] if i == 0 else max(meses[meses_ordenados[i - 1]])
-            for end in datas_mes:
-                if end <= start or end.weekday() != 0:
+    
+        resultados_por_site = {}
+        for site_nome, modelos in [("localiza", self.modelos_escolhidos_localiza), ("movida", self.modelos_escolhidos_movida)]:
+            df_site = df[df["Site"].str.lower() == site_nome]
+            df_site = df_site[df_site["Model"].isin(modelos)]
+    
+            # DEBUG opcional por site
+            with st.expander(f"🧪 DEBUG: DF filtrado - Site: {site_nome} | Filtro: {filtro} | Corte: {data_corte}"):
+                st.write(f"Registros: {len(df_site)}")
+                st.dataframe(df_site)
+    
+            df_site["Data"] = pd.to_datetime(df_site["Data"]).dt.normalize()
+            df_ids = df_site.groupby('Data')['ID'].apply(set).to_dict()
+            all_dates = df_site["Data"].sort_values().unique()
+    
+            meses = defaultdict(list)
+            for dt in all_dates:
+                chave_mes = dt.strftime('%Y-%m')
+                meses[chave_mes].append(dt)
+    
+            meses_ordenados = sorted(meses.keys())
+            intervalos = defaultdict(list)
+            for i, chave_mes in enumerate(meses_ordenados):
+                datas_mes = sorted(meses[chave_mes])
+                if len(datas_mes) < 2:
                     continue
-                if tipo_analise == 'variacao_media':
-                    label = f"Variação desde ({start.strftime('%d/%m')} até {end.strftime('%d/%m')})"
-                else:
-                    label = f"{variavel} de carros {filtro} de ({start.strftime('%d/%m')} até {end.strftime('%d/%m')})"
-                intervalos[chave_mes].append((label, start, end))
-
-        def preencher_nulos(row_dict):
-            for modelo in modelos:
-                row_dict[modelo] = None
-            row_dict['avg'] = None
-
-        dfs_por_mes = {}
-        for mes, lista_intervalos in intervalos.items():
-            results = []
-            prev_ids = None
-            for (rotulo, dt_ini, dt_fim) in lista_intervalos:
-                row_dict = {'Intervalo': rotulo}
-
-                ids_ini = df_ids.get(dt_ini, set())
-                ids_fim = df_ids.get(dt_fim, set())
-
-                if prev_ids is None:
-                    novos = ids_fim - ids_ini
-                    vendidos = ids_ini - ids_fim
-                else:
-                    novos = ids_fim - prev_ids
-                    vendidos = prev_ids - ids_fim
-
-                prev_ids = ids_fim
-
-                if filtro == 'novos':
-                    ids_validos = novos
-                elif filtro == 'vendidos':
-                    ids_validos = vendidos
-                else:
-                    ids_validos = ids_fim
-
-                df_filtrado = df[df["ID"].isin(ids_validos)]
-
-                if not df_filtrado.empty:
-                    try:
-                        if tipo_analise == 'variacao_media':
-                            df_pivot = df.pivot_table(
-                                index=['Data'], columns='Model', values='Price', aggfunc='mean'
-                            ).sort_index().reset_index().set_index("Data")
-
-                            if dt_ini in df_pivot.index and dt_fim in df_pivot.index:
-                                prices_ini = df_pivot.loc[dt_ini]
-                                prices_fim = df_pivot.loc[dt_fim]
-                                modelos_validos = df[df["ID"].isin(ids_validos)]["Model"].unique()
-                                prices_ini = prices_ini[modelos_validos]
-                                prices_fim = prices_fim[modelos_validos]
-                                variacoes = (prices_fim / prices_ini - 1) * 100
-
-                                q_fim = df[(df["Data"] == dt_fim) & (df["ID"].isin(ids_validos))].groupby("Model").size()
-                                media_pond = (variacoes * q_fim).sum() / q_fim.sum() if q_fim.sum() != 0 else 0
-
-                                for modelo in modelos:
-                                    row_dict[modelo] = variacoes.get(modelo, None)
-                                row_dict['avg'] = media_pond
+                start = datas_mes[0] if i == 0 else max(meses[meses_ordenados[i - 1]])
+                for end in datas_mes:
+                    if end <= start or end.weekday() != 0:
+                        continue
+                    if tipo_analise == 'variacao_media':
+                        label = f"Variação desde ({start.strftime('%d/%m')} até {end.strftime('%d/%m')})"
+                    else:
+                        label = f"{variavel} de carros {filtro} de ({start.strftime('%d/%m')} até {end.strftime('%d/%m')})"
+                    intervalos[chave_mes].append((label, start, end))
+    
+            def preencher_nulos(row_dict):
+                for modelo in modelos:
+                    row_dict[modelo] = None
+                row_dict['avg'] = None
+    
+            dfs_por_mes = {}
+            for mes, lista_intervalos in intervalos.items():
+                results = []
+                prev_ids = None
+                for (rotulo, dt_ini, dt_fim) in lista_intervalos:
+                    row_dict = {'Intervalo': rotulo}
+    
+                    ids_ini = df_ids.get(dt_ini, set())
+                    ids_fim = df_ids.get(dt_fim, set())
+    
+                    if prev_ids is None:
+                        novos = ids_fim - ids_ini
+                        vendidos = ids_ini - ids_fim
+                    else:
+                        novos = ids_fim - prev_ids
+                        vendidos = prev_ids - ids_fim
+    
+                    prev_ids = ids_fim
+    
+                    if filtro == 'novos':
+                        ids_validos = novos
+                    elif filtro == 'vendidos':
+                        ids_validos = vendidos
+                    else:
+                        ids_validos = ids_fim
+    
+                    df_filtrado = df_site[df_site["ID"].isin(ids_validos)]
+    
+                    if not df_filtrado.empty:
+                        try:
+                            if tipo_analise == 'variacao_media':
+                                df_pivot = df_site.pivot_table(
+                                    index=['Data'], columns='Model', values='Price', aggfunc='mean'
+                                ).sort_index().reset_index().set_index("Data")
+    
+                                if dt_ini in df_pivot.index and dt_fim in df_pivot.index:
+                                    prices_ini = df_pivot.loc[dt_ini]
+                                    prices_fim = df_pivot.loc[dt_fim]
+                                    modelos_validos = df_site[df_site["ID"].isin(ids_validos)]["Model"].unique()
+                                    prices_ini = prices_ini[modelos_validos]
+                                    prices_fim = prices_fim[modelos_validos]
+                                    variacoes = (prices_fim / prices_ini - 1) * 100
+    
+                                    q_fim = df_site[(df_site["Data"] == dt_fim) & (df_site["ID"].isin(ids_validos))].groupby("Model").size()
+                                    media_pond = (variacoes * q_fim).sum() / q_fim.sum() if q_fim.sum() != 0 else 0
+    
+                                    for modelo in modelos:
+                                        row_dict[modelo] = variacoes.get(modelo, None)
+                                    row_dict['avg'] = media_pond
+                                else:
+                                    preencher_nulos(row_dict)
                             else:
-                                preencher_nulos(row_dict)
-                        else:
-                            if variavel == "qtd":
-                                qtd_modelos = df_filtrado.groupby("Model")["ID"].nunique()
-                                total = len(df_filtrado["ID"].unique())
-                                for modelo in modelos:
-                                    row_dict[modelo] = qtd_modelos.get(modelo, 0)
-                            else:
-                                media_modelos = df_filtrado.groupby("Model")["Price"].mean()
-                                total = df_filtrado["Price"].mean()
-                                for modelo in modelos:
-                                    row_dict[modelo] = media_modelos.get(modelo, None)
-                            row_dict['avg'] = total
-                    except Exception:
+                                if variavel == "qtd":
+                                    qtd_modelos = df_filtrado.groupby("Model")["ID"].nunique()
+                                    total = len(df_filtrado["ID"].unique())
+                                    for modelo in modelos:
+                                        row_dict[modelo] = qtd_modelos.get(modelo, 0)
+                                else:
+                                    media_modelos = df_filtrado.groupby("Model")["Price"].mean()
+                                    total = df_filtrado["Price"].mean()
+                                    for modelo in modelos:
+                                        row_dict[modelo] = media_modelos.get(modelo, None)
+                                row_dict['avg'] = total
+                        except Exception:
+                            preencher_nulos(row_dict)
+                    else:
                         preencher_nulos(row_dict)
-                else:
-                    preencher_nulos(row_dict)
+    
+                    results.append(row_dict)
+    
+                df_mes = pd.DataFrame(results)
+                df_mes = df_mes[['Intervalo'] + modelos + ['avg']]
+                colunas_valores = [col for col in df_mes.columns if col != "Intervalo"]
+                df_mes[colunas_valores] = self.formatar_dataframe_valores(df_mes, colunas_valores, tipo_analise, variavel)
+                df_mes = df_mes.iloc[::-1].reset_index(drop=True)
+                dfs_por_mes[mes] = df_mes
+    
+            resultados_por_site[site_nome] = dfs_por_mes
+    
+        return resultados_por_site
 
-                results.append(row_dict)
-
-            df_mes = pd.DataFrame(results)
-            df_mes = df_mes[['Intervalo'] + modelos + ['avg']]
-            colunas_valores = [col for col in df_mes.columns if col != "Intervalo"]
-            df_mes[colunas_valores] = self.formatar_dataframe_valores(df_mes, colunas_valores, tipo_analise, variavel)
-            df_mes = df_mes.iloc[::-1].reset_index(drop=True)
-            dfs_por_mes[mes] = df_mes
-
-        return dfs_por_mes
 
 # ================================
 # Classe de Tabelas HTML
@@ -349,7 +352,6 @@ def carregar_base():
 # Sidebar (filtros)
 # ================================
 st.sidebar.header("Opções do Dashboard")
-site = st.sidebar.selectbox("Selecione o site:", ["localiza", "movida"])
 filtro = st.sidebar.selectbox("Filtro de carros:", ["total", "novos", "vendidos"])
 tipo_analise = st.sidebar.selectbox("Tipo de análise:", ["variacao_media", "preco", "qtd"])
 variavel = st.sidebar.selectbox("Variável:", ["preco", "qtd"])
@@ -380,6 +382,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
