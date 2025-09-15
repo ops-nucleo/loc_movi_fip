@@ -12,20 +12,19 @@ st.set_page_config(layout="wide")
 # Autenticação com senha
 # ================================
 if 'acesso_permitido' not in st.session_state:
-st.session_state['acesso_permitido'] = False
-
+    st.session_state['acesso_permitido'] = False
 
 if not st.session_state['acesso_permitido']:
-senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
-if senha_usuario:
-if senha_usuario == st.secrets["access_token"]:
-st.session_state['acesso_permitido'] = True
-st.rerun()
-else:
-st.error("Senha incorreta.")
-st.stop()
-else:
-st.stop()
+    senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
+    if senha_usuario:
+        if senha_usuario == st.secrets["access_token"]:
+            st.session_state['acesso_permitido'] = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta.")
+            st.stop()
+    else:
+        st.stop()
 
 
 # ================================
@@ -292,6 +291,25 @@ class TabelaLocalizaMovida:
         html += '</tbody></table>'
         return html
 
+    def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
+        tabela_esquerda = self.gerar_html_tabela(df_esquerda, titulo_esquerda, cor_esquerda)
+        tabela_direita = self.gerar_html_tabela(df_direita, titulo_direita, cor_direita)
+    
+        html = """
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+                    {tabela_esquerda}
+                </td>
+                <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+                    {tabela_direita}
+                </td>
+            </tr>
+        </table>
+        <br><br>
+        """.format(tabela_esquerda=tabela_esquerda, tabela_direita=tabela_direita)
+    
+        return html
     def mostrar_tabelas(self):
         col1, col2 = st.columns(2)
         with col1:
@@ -364,6 +382,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
         tabelas.mostrar_tabelas()
+
 
 
 
