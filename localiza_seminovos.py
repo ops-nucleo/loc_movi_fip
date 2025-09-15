@@ -367,7 +367,7 @@ dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, tipo_analise=tipo_an
 
 if modo_visualizacao == "Todos os meses":
     for mes, df_mes in dfs_por_mes.items():
-        st.subheader(f"Resultados - {site.title()} - {mes}")
+        st.subheader(f"Resultados - {mes}")
         if site == "localiza":
             tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
         else:
@@ -376,12 +376,13 @@ if modo_visualizacao == "Todos os meses":
 else:
     mes_escolhido = st.sidebar.selectbox("Selecione o mês:", list(dfs_por_mes.keys()))
     df_mes = dfs_por_mes[mes_escolhido]
-    st.subheader(f"Resultados - {site.title()} - {mes_escolhido}")
+    st.subheader(f"Resultados - {mes_escolhido}")
     if site == "localiza":
         tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
