@@ -114,9 +114,8 @@ class dashboard_localiza_movida:
         # Etapa final
         self.df = df_base
         progress.progress(100, text="✅ Carregamento concluído")
-        st.toast(f"⏱ Finalizado em {round(time.time() - start, 2)} segundos")
-
         return self.df
+
     def formatar_dataframe_valores(self, df_mes, colunas_valores, tipo_analise, variavel):
         if tipo_analise == 'variacao_media':
             return df_mes[colunas_valores].applymap(
@@ -270,25 +269,43 @@ class TabelaLocalizaMovida:
         self.df_movida = df_movida
 
     def gerar_html_tabela(self, df, titulo, cor_rgb):
-        html = '<table style="width:100%; border-collapse: collapse; margin: auto; font-family: Calibri, sans-serif;">'
-        html += '<thead>'
-        html += f'<tr style="background-color: {cor_rgb}; color: white;">'
-        html += f'<th colspan="{df.shape[1]}" style="padding: 8px; text-align: center; font-size: 18px;">{titulo}</th>'
-        html += '</tr>'
-        html += '<tr style="background-color: rgb(0, 32, 96); color: white;">'
+        html = f"""
+        <table style="width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11px;">
+            <thead>
+                <!-- TÍTULO MESCLADO -->
+                <tr>
+                    <th colspan="{df.shape[1]}" style="background-color: {cor_rgb};
+                                                        color: white;
+                                                        font-family: Calibri, sans-serif;
+                                                        font-weight: bold;
+                                                        font-size: 15px;
+                                                        text-align: center;
+                                                        padding: 8px;">
+                        {titulo}
+                    </th>
+                </tr>
+                <!-- CABEÇALHO DAS COLUNAS -->
+                <tr style="background-color: rgb(0, 32, 96); color: white;">
+        """
         for col in df.columns:
-            html += f'<th style="border: 1px solid #ddd; padding: 6px; text-align: center;">{col}</th>'
+            html += f'<th style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 11px;">{col}</th>'
         html += '</tr></thead><tbody>'
+    
         for i, row in df.iterrows():
             bg_color = 'rgb(242, 242, 242)' if i % 2 == 0 else 'white'
             html += f'<tr style="background-color: {bg_color};">'
             for col in df.columns:
                 valor = row[col]
-                cor_valor = "green" if isinstance(valor, str) and valor.startswith("+") else "red" if isinstance(valor, str) and valor.startswith("-") else "black"
-                html += f'<td style="border: 1px solid #ddd; padding: 6px; text-align: center; color:{cor_valor};">{valor}</td>'
+                cor_valor = (
+                    "green" if isinstance(valor, str) and valor.startswith("+")
+                    else "red" if isinstance(valor, str) and valor.startswith("-")
+                    else "black"
+                )
+                html += f'<td style="border: 1px solid #ddd; padding: 6px; text-align: center; color:{cor_valor}; font-size: 11px;">{valor}</td>'
             html += '</tr>'
         html += '</tbody></table>'
         return html
+
 
     def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
         tabela_esquerda = self.gerar_html_tabela(df_esquerda, titulo_esquerda, cor_esquerda)
@@ -374,6 +391,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
