@@ -285,10 +285,10 @@ class TabelaLocalizaMovida:
                     </th>
                 </tr>
                 <!-- CABEÇALHO DAS COLUNAS -->
-                <tr style="background-color: rgb(0, 32, 96); color: white;">
+                <tr style="background-color: rgb(242, 242, 242); color: black;">
         """
         for col in df.columns:
-            html += f'<th style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 11px;">{col}</th>'
+            html += f'<th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 11px;">{col}</th>'
         html += '</tr></thead><tbody>'
     
         for i, row in df.iterrows():
@@ -297,21 +297,21 @@ class TabelaLocalizaMovida:
             for col in df.columns:
                 valor = row[col]
                 cor_valor = (
-                    "green" if isinstance(valor, str) and valor.startswith("+")
-                    else "red" if isinstance(valor, str) and valor.startswith("-")
+                    "rgb(0,176,80)" if isinstance(valor, str) and valor.startswith("+")
+                    else "rgb(255,0,0)" if isinstance(valor, str) and valor.startswith("-")
                     else "black"
                 )
                 html += f'<td style="border: 1px solid #ddd; padding: 6px; text-align: center; color:{cor_valor}; font-size: 11px;">{valor}</td>'
             html += '</tr>'
         html += '</tbody></table>'
         return html
-
-
+    
+    
     def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
         tabela_esquerda = self.gerar_html_tabela(df_esquerda, titulo_esquerda, cor_esquerda)
         tabela_direita = self.gerar_html_tabela(df_direita, titulo_direita, cor_direita)
     
-        html = """
+        html = f"""
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <td style="width: 50%; vertical-align: top; padding-right: 10px;">
@@ -323,9 +323,9 @@ class TabelaLocalizaMovida:
             </tr>
         </table>
         <br><br>
-        """.format(tabela_esquerda=tabela_esquerda, tabela_direita=tabela_direita)
-    
+        """
         return html
+
     def mostrar_tabelas(self):
         col1, col2 = st.columns(2)
         with col1:
@@ -391,6 +391,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
