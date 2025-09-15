@@ -363,7 +363,7 @@ modo_visualizacao = st.sidebar.radio("Modo de visualização:", ["Todos os meses
 # ================================
 dash = carregar_base()
 dash.conectar_df()
-dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, site=site, tipo_analise=tipo_analise, variavel=variavel, data_corte=data_corte)
+dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, tipo_analise=tipo_analise, variavel=variavel, data_corte=data_corte)
 
 if modo_visualizacao == "Todos os meses":
     for mes, df_mes in dfs_por_mes.items():
@@ -382,6 +382,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
