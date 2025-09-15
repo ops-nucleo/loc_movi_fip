@@ -7,4 +7,3 @@ openpyxl==3.1.5
 numpy>=1.26.4
 altair==5.3.0
 XlsxWriter==3.2.0
-requests==2.32.3
