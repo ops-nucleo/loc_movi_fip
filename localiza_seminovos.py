@@ -246,11 +246,10 @@ class TabelaLocalizaMovida:
 # ================================
 # Cache: carregar base SQLite
 # ================================
-@st.cache_data
+@st.cache_resource
 def carregar_base():
     caminho = os.path.join("data", "car_prices_database.db")
-    dash = dashboard_localiza_movida(caminho)
-    return dash
+    return dashboard_localiza_movida(caminho)
 
 # ================================
 # Sidebar (filtros)
@@ -290,3 +289,4 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
         tabelas.mostrar_tabelas()
+
