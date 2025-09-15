@@ -1,3 +1,4 @@
+import time
 import os
 import sqlite3
 from datetime import datetime, date
@@ -29,7 +30,7 @@ if not st.session_state['acesso_permitido']:
 # ================================
 class dashboard_localiza_movida:
     def __init__(self, caminho_db):
-        self.conn = sqlite3.connect(caminho_db)
+        self.caminho_db = caminho_db
         self.df = None
         self.modelos_escolhidos_localiza = sorted([
             "MOBI LIKE 1.0", "TRACKER PREMIER 1.2", "ONIX PLUS LTZ 1.0",
@@ -44,11 +45,35 @@ class dashboard_localiza_movida:
         ])
 
     def conectar_df(self):
-        self.df = pd.read_sql_query("SELECT * FROM cars", self.conn)
-        self.df["Data"] = pd.to_datetime(self.df["Data"], errors="coerce")
-        self.conn.close()
-        return self.df
 
+        st.toast("🚀 Iniciando leitura do banco de dados")
+        start = time.time()
+
+        progress = st.progress(0, text="Conectando ao banco...")
+
+        # Etapa 1 – conexão
+        conn = sqlite3.connect(self.caminho_db)
+        progress.progress(20, text="Conectado com sucesso")
+
+        # Etapa 2 – leitura
+        progress.progress(40, text="Lendo dados da tabela 'cars'")
+        df_base = pd.read_sql_query("SELECT * FROM cars;", conn)
+        progress.progress(60, text=f"{len(df_base):,} registros lidos")
+
+        # Fecha conexão imediatamente
+        conn.close()
+
+        # Etapa 3 – tratamento
+        progress.progress(75, text="Convertendo datas e limpando registros")
+        df_base["Data"] = pd.to_datetime(df_base["Data"], errors="coerce")
+        df_base = df_base.dropna(subset=["ID"])
+
+        # Etapa final
+        self.df = df_base
+        progress.progress(100, text="✅ Carregamento concluído")
+        st.toast(f"⏱ Finalizado em {round(time.time() - start, 2)} segundos")
+
+        return self.df
     def formatar_dataframe_valores(self, df_mes, colunas_valores, tipo_analise, variavel):
         if tipo_analise == 'variacao_media':
             return df_mes[colunas_valores].applymap(
@@ -246,10 +271,11 @@ class TabelaLocalizaMovida:
 # ================================
 # Cache: carregar base SQLite
 # ================================
-@st.cache_resource
+@st.cache_data
 def carregar_base():
     caminho = os.path.join("data", "car_prices_database.db")
-    return dashboard_localiza_movida(caminho)
+    dash = dashboard_localiza_movida(caminho)
+    return dash.conectar_df()
 
 # ================================
 # Sidebar (filtros)
@@ -265,9 +291,13 @@ modo_visualizacao = st.sidebar.radio("Modo de visualização:", ["Todos os meses
 # ================================
 # Exibir resultados
 # ================================
-dash = carregar_base()
-df = dash.conectar_df()
-dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, site=site, tipo_analise=tipo_analise, variavel=variavel, data_corte=data_corte)
+df = carregar_base()
+dash = dashboard_localiza_movida(os.path.join("data", "car_prices_database.db"))
+dash.df = df  # reaproveita o cache
+dfs_por_mes = dash.calcular_variacao_semanal(
+    filtro=filtro, site=site, tipo_analise=tipo_analise,
+    variavel=variavel, data_corte=data_corte
+)
 
 # Mostra todas as tabelas (um mês embaixo do outro) ou apenas o mês selecionado
 if modo_visualizacao == "Todos os meses":
