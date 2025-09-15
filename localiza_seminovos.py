@@ -88,32 +88,21 @@ class dashboard_localiza_movida:
         ])
 
     def conectar_df(self):
-
-        st.toast("🚀 Iniciando leitura do banco de dados")
-        start = time.time()
-
-        progress = st.progress(0, text="Conectando ao banco...")
-
         # Etapa 1 – conexão
         conn = sqlite3.connect(self.caminho_db)
-        progress.progress(20, text="Conectado com sucesso")
 
         # Etapa 2 – leitura
-        progress.progress(40, text="Lendo dados da tabela 'cars'")
         df_base = pd.read_sql_query("SELECT * FROM cars;", conn)
-        progress.progress(60, text=f"{len(df_base):,} registros lidos")
 
         # Fecha conexão imediatamente
         conn.close()
 
         # Etapa 3 – tratamento
-        progress.progress(75, text="Convertendo datas e limpando registros")
         df_base["Data"] = pd.to_datetime(df_base["Data"], errors="coerce")
         df_base = df_base.dropna(subset=["ID"])
 
         # Etapa final
         self.df = df_base
-        progress.progress(100, text="✅ Carregamento concluído")
         return self.df
 
     def formatar_dataframe_valores(self, df_mes, colunas_valores, tipo_analise, variavel):
@@ -389,6 +378,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
