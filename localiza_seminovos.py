@@ -11,19 +11,63 @@ from collections import defaultdict
 # Autenticação com senha
 # ================================
 if 'acesso_permitido' not in st.session_state:
-    st.session_state['acesso_permitido'] = False
+st.session_state['acesso_permitido'] = False
+
 
 if not st.session_state['acesso_permitido']:
-    senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
-    if senha_usuario:
-        if senha_usuario == st.secrets["access_token"]:
-            st.session_state['acesso_permitido'] = True
-            st.experimental_rerun()
-        else:
-            st.error("Senha incorreta.")
-            st.stop()
-    else:
-        st.stop()
+senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
+if senha_usuario:
+if senha_usuario == st.secrets["access_token"]:
+st.session_state['acesso_permitido'] = True
+st.rerun()
+else:
+st.error("Senha incorreta.")
+st.stop()
+else:
+st.stop()
+
+
+# ================================
+# Estilo customizado e fundo com logo
+# ================================
+def get_image_as_base64(path):
+with open(path, "rb") as img_file:
+return base64.b64encode(img_file.read()).decode()
+
+
+def set_background(logo_path):
+st.markdown(
+f"""
+<style>
+.stApp {{
+background-image: url("data:image/png;base64,{logo_path}");
+background-size: cover;
+}}
+</style>
+""",
+unsafe_allow_html=True
+)
+
+
+set_background(get_image_as_base64("nucleo.png"))
+
+
+st.markdown("""
+<style>
+div[role="radiogroup"] label {
+background-color: rgb(0, 32, 96);
+color: white !important;
+padding: 10px 21px;
+border-radius: 8px;
+font-weight: normal;
+cursor: pointer;
+transition: 0.3s;
+border: 2px solid transparent;
+}
+div[role="radiogroup"] div {
+color: white;
+}
+div[role="radiogroup"] label span {
 
 # ================================
 # Classe de backend
@@ -319,4 +363,5 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
         tabelas.mostrar_tabelas()
+
 
