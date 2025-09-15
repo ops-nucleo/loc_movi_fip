@@ -261,7 +261,7 @@ class TabelaLocalizaMovida:
     def __init__(self, df_localiza, df_movida):
         self.df_localiza = df_localiza
         self.df_movida = df_movida
-    
+
     def gerar_html_tabela(self, df, titulo, cor_rgb):
         html = f"""
         <table style="width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11px;">
@@ -283,7 +283,7 @@ class TabelaLocalizaMovida:
         for col in df.columns:
             html += f'<th style="border: 1px solid #000; padding: 6px; text-align: center;">{col}</th>'
         html += '</tr></thead><tbody>'
-    
+
         for _, row in df.iterrows():
             html += f'<tr style="background-color: white;">'
             for col in df.columns:
@@ -298,74 +298,26 @@ class TabelaLocalizaMovida:
         html += '</tbody></table>'
         return html
 
-    
+
     def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
-        estilo = f"""
-        <style>
-            .tabela-wrapper {{
-                display: flex;
-                justify-content: center;
-                gap: 20px;
-                margin-bottom: 40px;
-                flex-wrap: wrap;
-            }}
-            .bloco-tabela {{
-                width: 500px;
-                border: 1px solid #ddd;
-                font-family: Arial, sans-serif;
-                font-size: 11px;
-            }}
-            .titulo-bloco {{
-                padding: 8px;
-                color: white;
-                font-weight: bold;
-                text-align: center;
-            }}
-            .verde-bg {{
-                background-color: {cor_esquerda};
-            }}
-            .laranja-bg {{
-                background-color: {cor_direita};
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-            }}
-            th, td {{
-                border: 1px solid #ccc;
-                padding: 6px 4px;
-                text-align: center;
-                vertical-align: middle;
-            }}
-            th {{
-                background-color: #f5f5f5;
-                font-weight: bold;
-            }}
-        </style>
+        tabela_esquerda = self.gerar_html_tabela(df_esquerda, titulo_esquerda, cor_esquerda)
+        tabela_direita = self.gerar_html_tabela(df_direita, titulo_direita, cor_direita)
+
+        html = f"""
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+                    {tabela_esquerda}
+                </td>
+                <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+                    {tabela_direita}
+                </td>
+            </tr>
+        </table>
+        <br><br>
         """
-    
-        def render_tabela(df, titulo, cor):
-            if df.empty:
-                return f"<div class='bloco-tabela'><div class='titulo-bloco {cor}'>{titulo}</div><p style='padding:10px'>Sem dados</p></div>"
-    
-            html = f"<div class='bloco-tabela'><div class='titulo-bloco {cor}'>{titulo}</div><table><thead><tr>"
-            for col in df.columns:
-                html += f"<th>{col}</th>"
-            html += "</tr></thead><tbody>"
-            for _, row in df.iterrows():
-                html += "<tr>" + "".join(f"<td>{val}</td>" for val in row) + "</tr>"
-            html += "</tbody></table></div>"
-            return html
-    
-        tabela_html = (
-            estilo +
-            "<div class='tabela-wrapper'>" +
-            render_tabela(df_esquerda, titulo_esquerda, "verde-bg") +
-            render_tabela(df_direita, titulo_direita, "laranja-bg") +
-            "</div>"
-        )
-        return tabela_html
-    
+        return html
+
     def mostrar_tabelas(self):
         col1, col2 = st.columns(2)
         with col1:
@@ -386,7 +338,6 @@ class TabelaLocalizaMovida:
             file_name="tabelas_localiza_movida.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
 # ================================
 # Cache: carregar base SQLite
 # ================================
@@ -468,5 +419,6 @@ else:
         ),
         unsafe_allow_html=True
     )
+
 
 
