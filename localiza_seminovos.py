@@ -138,7 +138,9 @@ class dashboard_localiza_movida:
         if data_corte is not None:
             data_corte = pd.to_datetime(data_corte).normalize()
             df = df[df["Data"] >= data_corte]
-
+        with st.expander(f"🧪 DEBUG: DF após filtros - Site: {site} | Filtro: {filtro} | Corte: {data_corte}"):
+            st.write(f"Registros após filtros: {len(df)}")
+            st.dataframe(df)
         df["Data"] = pd.to_datetime(df["Data"]).dt.normalize()
         df_ids = df.groupby('Data')['ID'].apply(set).to_dict()
         all_dates = df["Data"].sort_values().unique()
@@ -378,6 +380,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
