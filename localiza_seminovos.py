@@ -267,7 +267,7 @@ class TabelaLocalizaMovida:
     def __init__(self, df_localiza, df_movida):
         self.df_localiza = df_localiza
         self.df_movida = df_movida
-
+    
     def gerar_html_tabela(self, df, titulo, cor_rgb):
         html = f"""
         <table style="width: 100%; border-collapse: collapse; font-family: Calibri, sans-serif; font-size: 11px;">
@@ -276,7 +276,6 @@ class TabelaLocalizaMovida:
                 <tr>
                     <th colspan="{df.shape[1]}" style="background-color: {cor_rgb};
                                                         color: white;
-                                                        font-family: Calibri, sans-serif;
                                                         font-weight: bold;
                                                         font-size: 15px;
                                                         text-align: center;
@@ -288,12 +287,11 @@ class TabelaLocalizaMovida:
                 <tr style="background-color: rgb(242, 242, 242); color: black;">
         """
         for col in df.columns:
-            html += f'<th style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 11px;">{col}</th>'
+            html += f'<th style="border: 1px solid #000; padding: 6px; text-align: center;">{col}</th>'
         html += '</tr></thead><tbody>'
     
-        for i, row in df.iterrows():
-            bg_color = 'rgb(242, 242, 242)' if i % 2 == 0 else 'white'
-            html += f'<tr style="background-color: {bg_color};">'
+        for _, row in df.iterrows():
+            html += f'<tr style="background-color: white;">'
             for col in df.columns:
                 valor = row[col]
                 cor_valor = (
@@ -301,11 +299,11 @@ class TabelaLocalizaMovida:
                     else "rgb(255,0,0)" if isinstance(valor, str) and valor.startswith("-")
                     else "black"
                 )
-                html += f'<td style="border: 1px solid #ddd; padding: 6px; text-align: center; color:{cor_valor}; font-size: 11px;">{valor}</td>'
+                html += f'<td style="border: 1px solid #ddd; padding: 6px; text-align: center; color:{cor_valor};">{valor}</td>'
             html += '</tr>'
         html += '</tbody></table>'
         return html
-    
+
     
     def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
         tabela_esquerda = self.gerar_html_tabela(df_esquerda, titulo_esquerda, cor_esquerda)
@@ -391,6 +389,7 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
     tabelas.mostrar_tabelas()
+
 
 
 
