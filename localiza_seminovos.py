@@ -8,72 +8,66 @@ from io import BytesIO
 from collections import defaultdict
 import base64
 
-
 st.set_page_config(layout="wide")
-
 
 # ================================
 # Autenticação com senha
 # ================================
 if 'acesso_permitido' not in st.session_state:
-st.session_state['acesso_permitido'] = False
-
+    st.session_state['acesso_permitido'] = False
 
 if not st.session_state['acesso_permitido']:
-senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
-if senha_usuario:
-if senha_usuario == st.secrets["access_token"]:
-st.session_state['acesso_permitido'] = True
-st.rerun()
-else:
-st.error("Senha incorreta.")
-st.stop()
-else:
-st.stop()
-
+    senha_usuario = st.text_input("Digite a senha para acessar o dashboard:", type="password")
+    if senha_usuario:
+        if senha_usuario == st.secrets["access_token"]:
+            st.session_state['acesso_permitido'] = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta.")
+            st.stop()
+    else:
+        st.stop()
 
 # ================================
 # Estilo customizado e fundo com logo
 # ================================
 def get_image_as_base64(path):
-with open(path, "rb") as img_file:
-return base64.b64encode(img_file.read()).decode()
-
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
 
 def set_background(logo_path):
-st.markdown(f"""
-<style>
-.stApp {{
-background-image: url("data:image/png;base64,{logo_path}");
-background-size: cover;
-}}
-</style>
-""", unsafe_allow_html=True)
-
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{logo_path}");
+            background-size: cover;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
 
 set_background(get_image_as_base64("nucleo.png"))
-
 
 st.markdown("""
 <style>
 div[role="radiogroup"] label {
-background-color: rgb(0, 32, 96);
-color: white !important;
-padding: 10px 21px;
-border-radius: 8px;
-font-weight: normal;
-cursor: pointer;
-transition: 0.3s;
-border: 2px solid transparent;
+    background-color: rgb(0, 32, 96);
+    color: white !important;
+    padding: 10px 21px;
+    border-radius: 8px;
+    font-weight: normal;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 2px solid transparent;
 }
 div[role="radiogroup"] div {
-color: white;
+    color: white;
 }
 div[role="radiogroup"] label span {
-font-weight: bold;
+    font-weight: bold;
 }
 </style>
 """, unsafe_allow_html=True)
+
 # ================================
 # Classe de backend
 # ================================
@@ -341,10 +335,9 @@ class TabelaLocalizaMovida:
 # ================================
 @st.cache_data
 def carregar_base():
-caminho = os.path.join("data", "car_prices_database.db")
-dash = dashboard_localiza_movida(caminho)
-return dash
-
+    caminho = os.path.join("data", "car_prices_database.db")
+    dash = dashboard_localiza_movida(caminho)
+    return dash
 
 # ================================
 # Sidebar (filtros)
@@ -357,7 +350,6 @@ variavel = st.sidebar.selectbox("Variável:", ["preco", "qtd"])
 data_corte = st.sidebar.date_input("Data de corte:", value=date(2025, 4, 30))
 modo_visualizacao = st.sidebar.radio("Modo de visualização:", ["Todos os meses", "Filtrar mês específico"])
 
-
 # ================================
 # Exibir resultados
 # ================================
@@ -365,24 +357,24 @@ dash = carregar_base()
 dash.conectar_df()
 dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, site=site, tipo_analise=tipo_analise, variavel=variavel, data_corte=data_corte)
 
-
 if modo_visualizacao == "Todos os meses":
-for mes, df_mes in dfs_por_mes.items():
-st.subheader(f"Resultados - {site.title()} - {mes}")
-if site == "localiza":
-tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
+    for mes, df_mes in dfs_por_mes.items():
+        st.subheader(f"Resultados - {site.title()} - {mes}")
+        if site == "localiza":
+            tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
+        else:
+            tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
+        tabelas.mostrar_tabelas()
 else:
-tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
-tabelas.mostrar_tabelas()
-else:
-mes_escolhido = st.sidebar.selectbox("Selecione o mês:", list(dfs_por_mes.keys()))
-df_mes = dfs_por_mes[mes_escolhido]
-st.subheader(f"Resultados - {site.title()} - {mes_escolhido}")
-if site == "localiza":
-tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
-else:
-tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
-tabelas.mostrar_tabelas()
+    mes_escolhido = st.sidebar.selectbox("Selecione o mês:", list(dfs_por_mes.keys()))
+    df_mes = dfs_por_mes[mes_escolhido]
+    st.subheader(f"Resultados - {site.title()} - {mes_escolhido}")
+    if site == "localiza":
+        tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
+    else:
+        tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
+    tabelas.mostrar_tabelas()
+
 
 
 
