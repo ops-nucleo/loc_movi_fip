@@ -300,78 +300,72 @@ class TabelaLocalizaMovida:
 
     
     def gerar_html_tabelas_lado_a_lado(self, df_esquerda, df_direita, titulo_esquerda, titulo_direita, cor_esquerda, cor_direita):
-        estilo_tabela = """
-            <style>
-                .tabela-container {
-                    display: flex;
-                    justify-content: space-between;
-                    gap: 20px;
-                    margin-top: 10px;
-                    margin-bottom: 20px;
-                    font-family: Arial, sans-serif;
-                }
-                .tabela {
-                    border-collapse: collapse;
-                    width: 100%;
-                    font-size: 12px;
-                }
-                .tabela th, .tabela td {
-                    border: 1px solid #ccc;
-                    padding: 6px 8px;
-                    text-align: center;
-                    vertical-align: middle;
-                }
-                .tabela th {
-                    color: white;
-                    font-weight: bold;
-                }
-                .titulo-tabela {
-                    text-align: center;
-                    font-weight: bold;
-                    padding: 6px;
-                    color: white;
-                }
-                .verde {
-                    background-color: rgb(0, 176, 80);
-                }
-                .laranja {
-                    background-color: rgb(237, 125, 49);
-                }
-            </style>
+        estilo = f"""
+        <style>
+            .tabela-wrapper {{
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 40px;
+                flex-wrap: wrap;
+            }}
+            .bloco-tabela {{
+                width: 500px;
+                border: 1px solid #ddd;
+                font-family: Arial, sans-serif;
+                font-size: 11px;
+            }}
+            .titulo-bloco {{
+                padding: 8px;
+                color: white;
+                font-weight: bold;
+                text-align: center;
+            }}
+            .verde-bg {{
+                background-color: {cor_esquerda};
+            }}
+            .laranja-bg {{
+                background-color: {cor_direita};
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            th, td {{
+                border: 1px solid #ccc;
+                padding: 6px 4px;
+                text-align: center;
+                vertical-align: middle;
+            }}
+            th {{
+                background-color: #f5f5f5;
+                font-weight: bold;
+            }}
+        </style>
         """
     
-        def tabela_html(df, titulo, cor_css):
+        def render_tabela(df, titulo, cor):
             if df.empty:
-                return f"<div class='tabela-container'><p><i>Sem dados disponíveis</i></p></div>"
+                return f"<div class='bloco-tabela'><div class='titulo-bloco {cor}'>{titulo}</div><p style='padding:10px'>Sem dados</p></div>"
     
-            tabela = f"<div class='tabela-container' style='flex: 1;'>"
-            tabela += f"<div class='titulo-tabela {cor_css}'>{titulo}</div>"
-            tabela += "<table class='tabela'>"
-    
-            # Cabeçalho
-            tabela += "<tr>"
+            html = f"<div class='bloco-tabela'><div class='titulo-bloco {cor}'>{titulo}</div><table><thead><tr>"
             for col in df.columns:
-                tabela += f"<th>{col}</th>"
-            tabela += "</tr>"
-    
-            # Linhas
+                html += f"<th>{col}</th>"
+            html += "</tr></thead><tbody>"
             for _, row in df.iterrows():
-                tabela += "<tr>"
-                for val in row:
-                    valor = val if pd.isnull(val) else str(val)
-                    tabela += f"<td>{valor}</td>"
-                tabela += "</tr>"
+                html += "<tr>" + "".join(f"<td>{val}</td>" for val in row) + "</tr>"
+            html += "</tbody></table></div>"
+            return html
     
-            tabela += "</table></div>"
-            return tabela
+        tabela_html = (
+            estilo +
+            "<div class='tabela-wrapper'>" +
+            render_tabela(df_esquerda, titulo_esquerda, "verde-bg") +
+            render_tabela(df_direita, titulo_direita, "laranja-bg") +
+            "</div>"
+        )
+        return tabela_html
     
-        html_final = estilo_tabela + "<div class='tabela-container'>"
-        html_final += tabela_html(df_esquerda, titulo_esquerda, "verde")
-        html_final += tabela_html(df_direita, titulo_direita, "laranja")
-        html_final += "</div>"
-    
-        return html_final
-
     def mostrar_tabelas(self):
         col1, col2 = st.columns(2)
         with col1:
@@ -474,4 +468,5 @@ else:
         ),
         unsafe_allow_html=True
     )
+
 
