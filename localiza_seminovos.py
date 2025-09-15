@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 from io import BytesIO
 from collections import defaultdict
+st.set_page_config(layout="wide")
 
 # ================================
 # Autenticação com senha
@@ -363,5 +364,6 @@ else:
     else:
         tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
         tabelas.mostrar_tabelas()
+
 
 
