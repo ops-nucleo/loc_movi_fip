@@ -138,9 +138,9 @@ class dashboard_localiza_movida:
             df_site = df_site[df_site["Model"].isin(modelos)]
     
             # DEBUG opcional por site
-            with st.expander(f"🧪 DEBUG: DF filtrado - Site: {site_nome} | Filtro: {filtro} | Corte: {data_corte}"):
-                st.write(f"Registros: {len(df_site)}")
-                st.dataframe(df_site)
+            # with st.expander(f"🧪 DEBUG: DF filtrado - Site: {site_nome} | Filtro: {filtro} | Corte: {data_corte}"):
+            #     st.write(f"Registros: {len(df_site)}")
+            #     st.dataframe(df_site)
     
             df_site["Data"] = pd.to_datetime(df_site["Data"]).dt.normalize()
             df_ids = df_site.groupby('Data')['ID'].apply(set).to_dict()
@@ -356,42 +356,67 @@ filtro = st.sidebar.selectbox("Filtro de carros:", ["total", "novos", "vendidos"
 tipo_analise = st.sidebar.selectbox("Tipo de análise:", ["variacao_media", "preco", "qtd"])
 variavel = st.sidebar.selectbox("Variável:", ["preco", "qtd"])
 data_corte = st.sidebar.date_input("Data de corte:", value=date(2025, 4, 30))
-modo_visualizacao = st.sidebar.radio("Modo de visualização:", ["Todos os meses", "Filtrar mês específico"])
+
+with st.sidebar.container():
+    st.markdown("### Modo de visualização:")
+    modo_visualizacao = st.radio(
+        "", ["Todos os meses", "Filtrar mês específico"],
+        horizontal=False,
+        index=0,
+        key="modo_visualizacao"
+    )
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
 # ================================
 # Exibir resultados
 # ================================
 dash = carregar_base()
 dash.conectar_df()
-dfs_por_mes = dash.calcular_variacao_semanal(filtro=filtro, tipo_analise=tipo_analise, variavel=variavel, data_corte=data_corte)
 
+resultado_por_site = dash.calcular_variacao_semanal(
+    filtro=filtro,
+    tipo_analise=tipo_analise,
+    variavel=variavel,
+    data_corte=data_corte
+)
+
+dfs_localiza = resultado_por_site["localiza"]
+dfs_movida = resultado_por_site["movida"]
+
+# MODO: TODOS OS MESES
 if modo_visualizacao == "Todos os meses":
-    for mes, df_mes in dfs_por_mes.items():
-        st.subheader(f"Resultados - {mes}")
-        if site == "localiza":
-            tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
-        else:
-            tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
-        tabelas.mostrar_tabelas()
+    for mes in sorted(dfs_localiza.keys(), reverse=True):
+        df_loc = dfs_localiza.get(mes, pd.DataFrame())
+        df_mov = dfs_movida.get(mes, pd.DataFrame())
+
+        tabela = TabelaLocalizaMovida(df_loc, df_mov)
+        st.markdown(
+            tabela.gerar_html_tabelas_lado_a_lado(
+                df_loc, df_mov,
+                titulo_esquerda=f"Localiza - {mes}",
+                titulo_direita=f"Movida - {mes}",
+                cor_esquerda="rgb(0, 176, 80)",
+                cor_direita="rgb(237, 125, 49)"
+            ),
+            unsafe_allow_html=True
+        )
+
+# MODO: FILTRAR MÊS ESPECÍFICO
 else:
-    mes_escolhido = st.sidebar.selectbox("Selecione o mês:", list(dfs_por_mes.keys()))
-    df_mes = dfs_por_mes[mes_escolhido]
-    st.subheader(f"Resultados - {mes_escolhido}")
-    if site == "localiza":
-        tabelas = TabelaLocalizaMovida(df_mes, pd.DataFrame())
-    else:
-        tabelas = TabelaLocalizaMovida(pd.DataFrame(), df_mes)
-    tabelas.mostrar_tabelas()
+    meses_disponiveis = sorted(set(dfs_localiza.keys()) | set(dfs_movida.keys()), reverse=True)
+    mes_escolhido = st.sidebar.selectbox("Selecione o mês:", meses_disponiveis)
 
+    df_loc = dfs_localiza.get(mes_escolhido, pd.DataFrame())
+    df_mov = dfs_movida.get(mes_escolhido, pd.DataFrame())
 
-
-
-
-
-
-
-
-
-
-
-
+    tabela = TabelaLocalizaMovida(df_loc, df_mov)
+    st.markdown(
+        tabela.gerar_html_tabelas_lado_a_lado(
+            df_loc, df_mov,
+            titulo_esquerda=f"Localiza - {mes_escolhido}",
+            titulo_direita=f"Movida - {mes_escolhido}",
+            cor_esquerda="rgb(0, 176, 80)",
+            cor_direita="rgb(237, 125, 49)"
+        ),
+        unsafe_allow_html=True
+    )
